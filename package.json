@@ -1,0 +1,23 @@
+{
+  "name": "employee-tracker",
+  "version": "1.0.0",
+  "description": "Employee Tracker App",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MikeWentForth/Employee-Tracker.git"
+  },
+  "author": "Mike Wallace",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MikeWentForth/Employee-Tracker/issues"
+  },
+  "homepage": "https://github.com/MikeWentForth/Employee-Tracker#readme",
+  "dependencies": {
+    "inquirer": "^8.2.4",
+    "mysql2": "^3.6.0"
+  }
+}
