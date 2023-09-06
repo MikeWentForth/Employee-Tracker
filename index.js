@@ -1,21 +1,30 @@
-// GIVEN a command-line application that accepts user input
-// WHEN I start the application
-// THEN I am presented with the following options: view all departments, view all roles, view all employees, add a department, add a role, add an employee, and update an employee role
-// WHEN I choose to view all departments
-// THEN I am presented with a formatted table showing department names and department ids
-// WHEN I choose to view all roles
-// THEN I am presented with the job title, role id, the department that role belongs to, and the salary for that role
-// WHEN I choose to view all employees
-// THEN I am presented with a formatted table showing employee data, including employee ids, first names, last names, job titles, departments, salaries, and managers that the employees report to
-// WHEN I choose to add a department
-// THEN I am prompted to enter the name of the department and that department is added to the database
-// WHEN I choose to add a role
-// THEN I am prompted to enter the name, salary, and department for the role and that role is added to the database
-// WHEN I choose to add an employee
-// THEN I am prompted to enter the employee’s first name, last name, role, and manager, and that employee is added to the database
-// WHEN I choose to update an employee role
-// THEN I am prompted to select an employee to update and their new role and this information is updated in the database
+/*
+GIVEN a command-line application that accepts user input
+WHEN I start the application
+THEN I am presented with the following options: view all departments, view all roles, view all employees, add a department, add a role, add an employee, and update an employee role
 
+WHEN I choose to view all departments
+THEN I am presented with a formatted table showing department names and department ids
+
+WHEN I choose to view all roles
+THEN I am presented with the job title, role id, the department that role belongs to, and the salary for that role
+
+WHEN I choose to view all employees
+THEN I am presented with a formatted table showing employee data, including employee ids, first names, last names, job titles, departments, salaries, and managers that the employees report to
+
+WHEN I choose to add a department
+THEN I am prompted to enter the name of the department and that department is added to the database
+
+WHEN I choose to add a role
+THEN I am prompted to enter the name, salary, and department for the role and that role is added to the database
+
+WHEN I choose to add an employee
+THEN I am prompted to enter the employee’s first name, last name, role, and manager, and that employee is added to the database
+
+WHEN I choose to update an employee role
+THEN I am prompted to select an employee to update and their new role and this information is updated in the database
+
+*/
 // DB-access Constants
 // Should be moved to .env or similar XXXXXXX
 // On the mac, to start mysql, use: mysql.server start
@@ -63,7 +72,7 @@ async function connectToDB() {
         c = null;
     }
     return c;
-    
+
 }
 
 async function init() {
@@ -81,7 +90,7 @@ async function init() {
 
         // Respond based on the answer...
         if (answers.menuChoice == "view all departments") {
-            
+
             // Access DB
             const db_conn = await connectToDB();
             if (db_conn == null) continue;
@@ -89,7 +98,7 @@ async function init() {
             // Get a list of all depts
             const sqlQuery = "SELECT * FROM department;"
             const [rows, fields] = await db_conn.query(sqlQuery); // From GITHUB mysql2 examples
-            console.table(rows,['id','name']);
+            console.table(rows, ['id', 'name']);
             console.log();
 
             // Close the DB connection
@@ -98,12 +107,15 @@ async function init() {
         }
 
         if (answers.menuChoice == "view all roles") {
-            
+
             const db_conn = await connectToDB();
             if (db_conn == null) continue;
 
             // Get a list of all depts
-            const sqlQuery = "SELECT * FROM role;"
+            //const sqlQuery = "SELECT * FROM role;"
+            const sqlQuery = `SELECT role.id, title, salary, department.name as department 
+                FROM role 
+                INNER JOIN department ON department_id=department.id;`;
             const [rows, fields] = await db_conn.query(sqlQuery); // From GITHUB mysql2 examples
             console.table(rows);
             console.log();
@@ -119,7 +131,13 @@ async function init() {
             if (db_conn == null) continue;
 
             // Get a list of all depts
-            const sqlQuery = "SELECT * FROM employee;"
+            //const sqlQuery = "SELECT * FROM employee;"
+            const sqlQuery = `SELECT employee.id as id, CONCAT(employee.first_name," ",employee.last_name) as name, role.title as title, role.salary as salary, CONCAT(M.first_name, " ", M.last_name) as manager, department.name as department
+                FROM employee
+                INNER JOIN role ON employee.role_id = role.id
+                INNER JOIN department ON role.department_id = department.id
+                INNER JOIN employee M ON employee.manager_id = M.id OR employee.manager_id IS NULL;
+            `;
             const [rows, fields] = await db_conn.query(sqlQuery); // From GITHUB mysql2 examples
             console.table(rows);
             console.log();
@@ -150,7 +168,7 @@ async function init() {
             // Execute the add command
             const sqlQuery = `INSERT INTO department (name) VALUES ('${dep_answer.name}');`;
             const result = await db_conn.query(sqlQuery);
-            
+
             // Notify that the add is complete
             console.log(dep_answer.name + " added to the departments table.");
 
@@ -174,7 +192,7 @@ async function init() {
             // Execute the add command
             let sqlQuery = 'SELECT * FROM department;';
             let result = await db_conn.query(sqlQuery);
-            
+
             // Create arrays to hold department names ids
             const rows = result[0];  // Should be an array of objects {id, name}
             // Place all of the names in the array departmentNameArray
@@ -224,7 +242,7 @@ async function init() {
             // Execute the add command
             sqlQuery = `INSERT INTO role (title, salary, department_id) VALUES ('${role_answer.title}', '${role_answer.salary}', ${dept_id});`;
             result = await db_conn.query(sqlQuery);
-            
+
             // Notify that the add is complete
             console.log(role_answer.title + " added to the roles table.");
 
@@ -233,7 +251,7 @@ async function init() {
 
         }
 
-        
+
 
 
         if (answers.menuChoice == "add an employee") {
@@ -246,7 +264,7 @@ async function init() {
 
             let sqlQuery = 'SELECT * FROM role;';
             let result = await db_conn.query(sqlQuery);
-            
+
             // Create arrays to hold role information
             let role_array = result[0];  // Should be an array of objects {id, title, salary, dept_id}
             // Place all of the role titles in the array roleTitles
@@ -260,7 +278,7 @@ async function init() {
 
             sqlQuery = 'SELECT * FROM employee;';
             result = await db_conn.query(sqlQuery);
-            
+
             // Create arrays to hold manager information
             let employee_array = result[0];  // Should be an array of objects
             // Place all of the role titles in the array roleTitles
@@ -312,14 +330,14 @@ async function init() {
             }
 
             // Find the id associated with the chosen manager name
-            
+
             let manager_id = null; // default to null to handle when there is not a manager.
             let managerName;
             for (let manager of employee_array) {
                 managerName = manager.first_name + " " + manager.last_name;
                 if (managerName == employee_answer.managerName) manager_id = manager.id;
             }
-            
+
 
             // Connect to the DB
             db_conn = await connectToDB();
@@ -329,7 +347,7 @@ async function init() {
             //sqlQuery = `INSERT INTO role (title, salary, department_id) VALUES ('${role_answer.title}', '${role_answer.salary}', ${dept_id});`;
             sqlQuery = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${employee_answer.firstName}', '${employee_answer.lastName}', ${role_id}, ${manager_id} );`;
             result = await db_conn.query(sqlQuery);
-            
+
             // Notify that the add is complete
             console.log(employee_answer.firstName + " added to the employee table.");
 
@@ -340,23 +358,93 @@ async function init() {
 
 
 
-        if (answers.menuChoice == "update a new employee role") {
+        if (answers.menuChoice == "update an employee role") {
 
-            // create an employee array
-            // create a new role array
+            // create an employee array from the db
+            // generate an array of employee names
+            let db_conn = await connectToDB();
+            if (db_conn == null) continue;
+
+            let sqlQuery = 'SELECT * FROM employee;';
+            let result = await db_conn.query(sqlQuery);
+
+            // Create arrays to hold manager information
+            let employee_array = result[0];  // Should be an array of objects
+            // Place all of the role titles in the array roleTitles
+
+            let employeeNames = [];
+            for (let e of employee_array) {
+                employeeNames.push(e.first_name + " " + e.last_name);
+            }
+
+            // create a new role array from the db
+            // generate an array of role titles
+            sqlQuery = 'SELECT * FROM role;';
+            result = await db_conn.query(sqlQuery);
+
+            // Create arrays to hold role information
+            let role_array = result[0];  // Should be an array of objects {id, title, salary, dept_id}
+            // Place all of the role titles in the array roleTitles
+
+            let roleTitles = [];
+            for (let e of role_array) {
+                roleTitles.push(e.title);
+            }
+
+            // Close the database
+            await db_conn.end();
 
             // Use inquirer to ask for an employee name from the list of names
 
-            // Ask for a new role name from the list of names
+            const questions = [
+                {
+                    type: "list",
+                    name: "employeeName",
+                    message: "Which employee's role do you want to update?",
+                    choices: employeeNames
+                },
+                {
+                    type: "list",
+                    name: "newRoleTitle",
+                    message: "Which role do you want to assign the selected employee?",
+                    choices: roleTitles
+                },
+            ]
+
+            // Ask for a new role name from the list of roles
+            let answers = await inquirer.prompt(questions);
 
             // Find the id numbers that correspond to the chosen employee and role
+            // answers.employeeName is the first name, space, last name of employee
+            // answers.newRoleTitle is the title of the role
+            let role_id;
+            for (let role of role_array) {
+                if (role.title == answers.newRoleTitle) role_id = role.id;
+            }
+
+            let employee_id = null; // default to null to handle when there is not a manager.
+            let employeeName;
+            for (let employee of employee_array) {
+                employeeName = employee.first_name + " " + employee.last_name;
+                if (employeeName == answers.employeeName) employee_id = employee.id;
+            }
 
             // Connect to the db
+            db_conn = await connectToDB();
+            if (db_conn == null) continue;
+            
             // Update the employee record with the associated new role
             // Create the sql
-            // Execute the sql
-            // Close the db
+            sqlQuery = `UPDATE employee SET role_id = ${role_id} WHERE id = ${employee_id};`;
 
+            // Execute the sql
+            result = await db_conn.query(sqlQuery);
+
+            // Close the db
+            await db_conn.end();
+
+            // Notify user of success
+            console.log("connection received");
 
         }
 
@@ -370,17 +458,4 @@ async function init() {
 }
 
 init();
-
-
-
-// {
-//     type: "list",
-//     name: "menuChoice",
-//     message: "Enter your github username:",
-//     when: (answers) => {
-//         if (answers.employeeTitle === "Engineer") {
-//             return true;
-//         }
-// }
-
 
