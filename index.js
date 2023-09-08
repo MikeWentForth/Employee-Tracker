@@ -3,38 +3,49 @@ GIVEN a command-line application that accepts user input
 WHEN I start the application
 THEN I am presented with the following options: view all departments, view all roles, view all employees, add a department, add a role, add an employee, and update an employee role
 
+
 WHEN I choose to view all departments
 THEN I am presented with a formatted table showing department names and department ids
+
 
 WHEN I choose to view all roles
 THEN I am presented with the job title, role id, the department that role belongs to, and the salary for that role
 
+
 WHEN I choose to view all employees
 THEN I am presented with a formatted table showing employee data, including employee ids, first names, last names, job titles, departments, salaries, and managers that the employees report to
+
 
 WHEN I choose to add a department
 THEN I am prompted to enter the name of the department and that department is added to the database
 
+
 WHEN I choose to add a role
 THEN I am prompted to enter the name, salary, and department for the role and that role is added to the database
 
+
 WHEN I choose to add an employee
 THEN I am prompted to enter the employee’s first name, last name, role, and manager, and that employee is added to the database
+
 
 WHEN I choose to update an employee role
 THEN I am prompted to select an employee to update and their new role and this information is updated in the database
 
 */
-// DB-access Constants
-// Should be moved to .env or similar XXXXXXX
-// On the mac, to start mysql, use: mysql.server start
-const DB_USER = "root";
-const DB_PASS = "8044chip";
+
+// Must have mysql running in the background for this system to work
+// On the mac, to start mysql, use: 
+//      mysql.server start
+// To access the mysql system via the console, use: 
+//      mysql -u root -p
+// To initialize the database, from within the mysql console, use:
+//      source [complete path to initialize.sql];
 
 // Import needed modules
 const inquirer = require('inquirer');
 // const mysql = require('mysql2');
 const mysql = require('mysql2/promise');  // MIGHT be needed for await-style commands
+require('dotenv').config()
 
 // Prep the inquirer questions menu
 const questions = [
@@ -61,9 +72,9 @@ async function connectToDB() {
     try {
         c = await mysql.createConnection({
             host: '127.0.0.1',
-            user: DB_USER,
-            password: DB_PASS,
-            database: 'EmployeeTracker',
+            user: process.env.DB_USER,
+            password: process.env.DB_PASS,
+            database: process.env.DB_NAME,
             port: 3306
         });
     } catch (e) {
@@ -130,13 +141,18 @@ async function init() {
             const db_conn = await connectToDB();
             if (db_conn == null) continue;
 
-            // Get a list of all depts
-            //const sqlQuery = "SELECT * FROM employee;"
-            const sqlQuery = `SELECT employee.id as id, CONCAT(employee.first_name," ",employee.last_name) as name, role.title as title, role.salary as salary, CONCAT(M.first_name, " ", M.last_name) as manager, department.name as department
+            const sqlQuery = `
+                SELECT 
+                    employee.id as id, 
+                    CONCAT(employee.first_name," ",employee.last_name) as name, 
+                    role.title as title, 
+                    role.salary as salary, 
+                    department.name as department,
+                    CONCAT(M.first_name, " ", M.last_name) as manager
                 FROM employee
-                INNER JOIN role ON employee.role_id = role.id
-                INNER JOIN department ON role.department_id = department.id
-                INNER JOIN employee M ON employee.manager_id = M.id OR employee.manager_id IS NULL;
+                LEFT JOIN role ON employee.role_id = role.id
+                LEFT JOIN department ON role.department_id = department.id
+                LEFT JOIN employee M ON employee.manager_id = M.id;
             `;
             const [rows, fields] = await db_conn.query(sqlQuery); // From GITHUB mysql2 examples
             console.table(rows);
@@ -144,9 +160,7 @@ async function init() {
 
             // Close the DB connection
             await db_conn.end();
-            // Access DB
-            // Get a list of all employees
-            // Display the list
+
         }
 
         if (answers.menuChoice == "add a department") {
@@ -250,8 +264,6 @@ async function init() {
             await db_conn.end();
 
         }
-
-
 
 
         if (answers.menuChoice == "add an employee") {
